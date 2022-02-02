@@ -1,13 +1,11 @@
-import { Col, Row } from 'antd'
+import Layout from '../components/General/Layout'
 import TableDisplay from '../components/TableDisplay'
 
 const HomePage = () => {
     return (
-        <Row>
-            <Col span={16} offset={4}>
-                <TableDisplay />
-            </Col>
-        </Row>
+        <Layout>
+            <TableDisplay />
+        </Layout>
     )
 }
 

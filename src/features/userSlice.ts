@@ -1,11 +1,12 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { useNavigate } from 'react-router-dom'
 import axios from '../utils/axios-orders'
 
 type UserState = {
-    usersList: User[],
-    status: 'loading' | 'success' | 'error' | 'idle',
-    error: string | null
+    usersList: User[]
+    fetch: { status: 'loading' | 'idle', error: string | null }
+    add: { status: 'loading' | 'idle', error: string | null }
+    edit: { status: 'loading' | 'idle', error: string | null }
+    delete: { status: 'loading' | 'idle', error: string | null }
 }
 
 export type User = {
@@ -18,127 +19,110 @@ export type User = {
     }
 }
 
-type UsersActionError = {
-    message: string
-}
-
-export const fetchUsers = createAsyncThunk<User[], number, { rejectValue: UsersActionError }>(
+export const fetchUsers = createAsyncThunk(
     'users/fetchUsers',
-    async (limit: number, thunkApi) => {
-        const response = await axios.get(`/`)
-        if (response.status !== 200) {
-            return thunkApi.rejectWithValue({
-                message: `${response.status} error, Unable to fetch users.`
-            })
-        }
-        const data: User[] = await response.data
-        return data
+    (_, { dispatch }) => {
+        dispatch(userSlice.actions.initiateLoading('fetch'))
+        axios.get(`/`).then(response => {
+            dispatch(userSlice.actions.fetchUsersSuccess(response.data))
+            dispatch(userSlice.actions.clearLoading('fetch'))
+        }).catch(error => {
+            console.log(error)
+            dispatch(userSlice.actions.clearLoading('fetch'))
+        })
+
     })
 
-export const addUser = createAsyncThunk<User, { name: string, email: string }, { rejectValue: UsersActionError }>(
+export const addUser = createAsyncThunk(
     'users/addUser',
-    async (payload, thunkApi) => {
-        const response = await axios.post(`/`, { ...payload })
-        if (response.status !== 201) {
-            return thunkApi.rejectWithValue({
-                message: `${response.status} error, Unable to add user.`
-            })
-        }
-        const data: User = await {...response.data, username: `user_${payload.name}`, address: { city: 'Dubai' }}
-        return data
+    (payload: { name: string, email: string, username: string, address: { city: string }, callback: () => void }, { dispatch }) => {
+        dispatch(userSlice.actions.initiateLoading('add'))
+        axios.post(`/`, { ...payload }).then(response => {
+            dispatch(userSlice.actions.addUserSuccess(response.data))
+            dispatch(userSlice.actions.clearLoading('add'))
+            payload.callback()
+        }).catch(error => {
+            console.log(error)
+            dispatch(userSlice.actions.clearLoading('add'))
+        })
     })
 
-export const editUser = createAsyncThunk<User, { name: string, email: string, id: number }, { rejectValue: UsersActionError }>(
+export const editUser = createAsyncThunk(
     'users/editUser',
-    async ({ name, email, id }, thunkApi) => {
-        const response = await axios.put(`${id}`, { name, email })
-        console.log(response)
-        if (response.status !== 200) {
-            return thunkApi.rejectWithValue({
-                message: `${response.status} error, Unable to edit user.`
-            })
-        }
-        const data: User = await response.data
-        return data
+    ({ name, email, username, address, id, callback }: { name: string, email: string, username: string, address: { city: string }, id: number, callback: () => void }, { dispatch }) => {
+        dispatch(userSlice.actions.initiateLoading('edit'))
+        axios.put(`/${id}`, { name, email, username, address }).then(response => {
+            dispatch(userSlice.actions.editUserSuccess(response.data))
+            dispatch(userSlice.actions.clearLoading('edit'))
+            callback()
+        }).catch(error => {
+            console.log(error)
+            dispatch(userSlice.actions.clearLoading('edit'))
+        })
     })
 
-export const deleteUser = createAsyncThunk<User, { id: number }, { rejectValue: UsersActionError }>(
+export const deleteUser = createAsyncThunk(
     'users/deleteUser',
-    async (payload, thunkApi) => {
-        const response = await axios.delete(`${payload.id}`)
-        if (response.status !== 200) {
-            return thunkApi.rejectWithValue({
-                message: `${response.status} error, Unable to delete user.`
-            })
-        }
-        const data: User = await { ...response.data, ...payload }
-        return data
+    (payload: { id: number, callback: () => void }, { dispatch }) => {
+        dispatch(userSlice.actions.initiateLoading('delete'))
+        axios.delete(`/${payload.id}`).then(response => {
+            dispatch(userSlice.actions.deleteUserSuccess({ ...response.data, ...payload }))
+            dispatch(userSlice.actions.clearLoading('delete'))
+            payload.callback()
+        }).catch(error => {
+            console.log(error)
+            dispatch(userSlice.actions.clearLoading('delete'))
+        })
     })
-
 
 const initialState: UserState = {
     usersList: [],
-    status: 'idle',
-    error: null
+    fetch: { status: 'idle', error: null },
+    add: { status: 'idle', error: null },
+    edit: { status: 'idle', error: null },
+    delete: { status: 'idle', error: null }
 }
 
 export const userSlice = createSlice({
     name: 'users',
     initialState,
     reducers: {
-        // addUser: (state, { payload }: PayloadAction<User>) => {
-        //     state.usersList.push(payload)
-        // },
-        // editUser: (state, { payload }: PayloadAction<User>) => {
-        //     state.usersList.push(payload)
-        // },
-        // deleteUser: (state, { payload }: PayloadAction<User>) => {
-        //     console.log(payload);
-        // }
-    },
-    extraReducers: (builder) => {
-        builder.addCase(fetchUsers.pending, (state) => {
-            state.status = 'loading'
-            state.error = null
-            console.log('loading');
-        })
-        builder.addCase(addUser.pending, (state) => {
-            state.status = 'loading'
-            state.error = null
-            console.log('loading');
-        })
-        builder.addCase(editUser.pending, (state) => {
-            state.status = 'loading'
-            state.error = null
-            console.log('loading');
-        })
-        builder.addCase(deleteUser.pending, (state) => {
-            state.status = 'loading'
-            state.error = null
-            console.log('loading');
-        })
-        builder.addCase(fetchUsers.fulfilled, (state, { payload }) => {
+        fetchUsersSuccess: (state, { payload }: PayloadAction<User[]>) => {
+            console.log('successful', payload);
             state.usersList = payload
-            state.status = 'idle'
-        })
-        builder.addCase(addUser.fulfilled, (state, { payload }: PayloadAction<User>) => {
+        },
+        addUserSuccess: (state, { payload }: PayloadAction<User>) => {
+            console.log('successful', payload);
             state.usersList.push(payload)
-            state.status = 'idle'
-        })
-        builder.addCase(editUser.fulfilled, (state, { payload }: PayloadAction<User>) => {
-            console.log(payload)
-            // state.usersList.push(payload)
-            // state.status = 'idle'
-        })
-        builder.addCase(deleteUser.fulfilled, (state, { payload }: PayloadAction<User>) => {
+        },
+        editUserSuccess: (state, { payload }: PayloadAction<User>) => {
+            console.log('successful', payload)
+            const findUser = state.usersList.find(user => user.id === payload.id)
+            const { name, username, email, address } = payload
+            if (findUser) {
+                findUser.name = name
+                findUser.username = username
+                findUser.email = email
+                findUser.address = address
+            }
+        },
+        deleteUserSuccess: (state, { payload }: PayloadAction<User>) => {
+            console.log('successful', payload);
             state.usersList = state.usersList.filter(user => user.id !== payload.id)
-            state.status = 'idle'            
-        })
-        builder.addCase(fetchUsers.rejected || addUser.fulfilled || editUser.rejected || deleteUser.rejected, (state, { payload }) => {
-            if (payload) state.error = payload.message
-            state.status = 'idle'
-        })
-    },
+        },
+        initiateLoading: (state, { payload }: PayloadAction<'fetch' | 'add' | 'edit' | 'delete'>) => {
+            if (payload === 'fetch') state['fetch'].status = 'loading'
+            else if (payload === 'add') state['add'].status = 'loading'
+            else if (payload === 'edit') state['edit'].status = 'loading'
+            else if (payload === 'delete') state['delete'].status = 'loading'
+        },
+        clearLoading: (state, { payload }: PayloadAction<'fetch' | 'add' | 'edit' | 'delete'>) => {
+            if (payload === 'fetch') state['fetch'].status = 'idle'
+            else if (payload === 'add') state['add'].status = 'idle'
+            else if (payload === 'edit') state['edit'].status = 'idle'
+            else if (payload === 'delete') state['delete'].status = 'idle'
+        },
+    }
 })
 
 export const { } = userSlice.actions

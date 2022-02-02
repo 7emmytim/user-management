@@ -11,7 +11,7 @@ const App = () => {
   const dispatch = useDispatch()
 
   useEffect(() => {
-    dispatch(fetchUsers(100))
+    dispatch(fetchUsers())
   }, [dispatch])
 
   return (
