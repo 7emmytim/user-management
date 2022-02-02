@@ -1,0 +1,17 @@
+#TableContainer {
+    margin-top: 30px;
+
+    .edit-user-btn {
+        background-color: #ffc107;
+        border: none;
+        border-radius: 5px;
+        color: #fff;
+        cursor: pointer;
+        padding: 5px 20px;
+    }
+
+    .cancel-modal-btn {
+        background-color: #6c757d;
+        border: none;
+    }
+}
