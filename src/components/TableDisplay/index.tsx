@@ -1,4 +1,10 @@
-import { Button, Card, Modal, Space, Table } from 'antd'
+// import { Button, Card, Modal, Space, Table } from 'antd'
+import Button from 'antd/es/button'
+import Modal from 'antd/es/modal'
+import Card from 'antd/es/card'
+import Space from 'antd/es/space'
+import Table from 'antd/es/table'
+
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
