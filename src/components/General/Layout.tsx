@@ -1,5 +1,4 @@
-// import { Alert } from 'antd'
-import Alert from 'antd/es/alert'
+import { Alert } from 'antd'
 import React from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '../../app/store'

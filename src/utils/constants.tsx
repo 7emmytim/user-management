@@ -1,5 +1,4 @@
-// import { Button } from 'antd'
-import Button from 'antd/es/button'
+import { Button } from 'antd'
 import { ColumnsType } from 'antd/lib/table'
 import { Link } from 'react-router-dom'
 
