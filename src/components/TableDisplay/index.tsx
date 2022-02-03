@@ -39,7 +39,7 @@ const TableDisplay = () => {
                         <Button type='primary'>Add user</Button>
                     </Link>
                 }>
-                <Table dataSource={users} loading={fetch.status === 'loading'} columns={getColumns(showModal)} rowKey='id' />
+                <Table dataSource={users} loading={fetch.status === 'loading'} columns={getColumns(showModal)} rowKey='id' bordered size='large' pagination={false} scroll={{ x: true }} />
                 <Modal
                     visible={visible}
                     onCancel={closeModal}

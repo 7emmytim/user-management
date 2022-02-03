@@ -1,5 +1,7 @@
-import { Col, Row } from "antd"
-import React from "react"
+import { Alert } from 'antd'
+import React from 'react'
+import { useSelector } from 'react-redux'
+import { RootState } from '../../app/store'
 import './Layout.scss'
 
 type LayoutTypes = {
@@ -7,13 +9,18 @@ type LayoutTypes = {
 }
 
 const Layout = (props: LayoutTypes) => {
+
+    const { fetch, add, edit, delete: deleteUserFn } = useSelector((state: RootState) => state.users)
+    const error = fetch.error || add.error || edit.error || deleteUserFn.error
+
     return (
-        <Row justify='center' align='middle' id="Layout">
-            <Col span={24} sm={24} lg={24} xl={18} xxl={14}>
+        <div>
+            {error && <Alert description={error} banner type='error' />}
+            <div id='Layout'>
                 <h1>Dashboard</h1>
                 {props.children}
-            </Col>
-        </Row>
+            </div>
+        </div>
     )
 }
 

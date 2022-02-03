@@ -1,9 +1,9 @@
-import { Button, Card, Form, Input } from 'antd'
+import { Button, Card, Col, Form, Input, Row } from 'antd'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { RootState } from '../../app/store'
 import { addUser, editUser } from '../../features/userSlice'
-import { formData, layout, tailLayout } from '../../utils/constants'
+import { formData, layout } from '../../utils/constants'
 
 const FormDisplay = () => {
 
@@ -19,12 +19,13 @@ const FormDisplay = () => {
 
         const { name, email, username, city } = values
 
-        const userName = username ? username : `user ${name}`
+        const userName = username ? username : name.toLowerCase()
         const userCity = username ? city : 'World'
 
         const newValues = { name, username: userName, email, address: { city: userCity }, callback: () => navigate('/') }
+        const findLastId = Number((users[users.length - 1].id))
 
-        id ? dispatch(editUser({ ...newValues, id: Number(id) })) : dispatch(addUser({ ...newValues }))
+        id ? dispatch(editUser({ ...newValues, id: Number(id) })) : dispatch(addUser({ ...newValues, id: findLastId + 1 }))
     }
 
     const editData = users.find(user => user.id === Number(id))
@@ -44,7 +45,7 @@ const FormDisplay = () => {
                             <Form.Item
                                 key={item.label}
                                 label={item.label}
-                                name={item.label.toLocaleLowerCase()}
+                                name={item.label.toLowerCase()}
                                 rules={item.label === 'Email' ? [...item.rules, { type: 'email', message: 'Please enter a valid email' }] : [...item.rules]}
                             >
                                 <Input size='large' />
@@ -53,13 +54,19 @@ const FormDisplay = () => {
                     })
                 }
 
-                <Form.Item {...tailLayout}>
-                    <Button type='ghost' danger onClick={() => navigate('/')}>
-                        Cancel
-                    </Button>
-                    <Button htmlType='submit' type='primary' loading={id ? edit.status === 'loading' : add.status === 'loading'} className='submit-user-btn'>
-                        Submit
-                    </Button>
+                <Form.Item>
+                    <Row gutter={[10, 15]}>
+                        <Col>
+                            <Button type='ghost' danger onClick={() => navigate('/')}>
+                                Cancel
+                            </Button>
+                        </Col>
+                        <Col>
+                            <Button htmlType='submit' type='primary' loading={id ? edit.status === 'loading' : add.status === 'loading'} className='submit-user-btn'>
+                                Submit
+                            </Button>
+                        </Col>
+                    </Row>
                 </Form.Item>
             </Form>
         </Card>

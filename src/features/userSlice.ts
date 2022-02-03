@@ -1,77 +1,66 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { AnyAction, createAsyncThunk, createSlice, PayloadAction, ThunkDispatch } from '@reduxjs/toolkit'
 import axios from '../utils/axios-orders'
+import { User, UserActionPayloadTypes, UserState } from '../utils/constants'
 
-type UserState = {
-    usersList: User[]
-    fetch: { status: 'loading' | 'idle', error: string | null }
-    add: { status: 'loading' | 'idle', error: string | null }
-    edit: { status: 'loading' | 'idle', error: string | null }
-    delete: { status: 'loading' | 'idle', error: string | null }
+const dispatchLoadingBlock = (dispatch: ThunkDispatch<unknown, unknown, AnyAction>, type: 'fetch' | 'add' | 'edit' | 'delete') => {
+    dispatch(userSlice.actions.toggleError({ type, message: null }))
+    dispatch(userSlice.actions.toggleLoadingStatus({ type, status: 'loading' }))
 }
 
-export type User = {
-    id: string | number
-    name: string
-    username: string
-    email: string
-    address: {
-        city: string
-    }
+const dispatchErrorBlock = (dispatch: ThunkDispatch<unknown, unknown, AnyAction>, type: 'fetch' | 'add' | 'edit' | 'delete', message: string) => {
+    dispatch(userSlice.actions.toggleLoadingStatus({ type, status: 'idle' }))
+    dispatch(userSlice.actions.toggleError({ type, message: `Failed to ${type} ${type === 'fetch' ? 'users' : 'user'} (${message})` }))
 }
 
 export const fetchUsers = createAsyncThunk(
     'users/fetchUsers',
     (_, { dispatch }) => {
-        dispatch(userSlice.actions.initiateLoading('fetch'))
+        dispatchLoadingBlock(dispatch, 'fetch')
         axios.get(`/`).then(response => {
             dispatch(userSlice.actions.fetchUsersSuccess(response.data))
-            dispatch(userSlice.actions.clearLoading('fetch'))
+            dispatch(userSlice.actions.toggleLoadingStatus({ type: 'fetch', status: 'idle' }))
         }).catch(error => {
-            console.log(error)
-            dispatch(userSlice.actions.clearLoading('fetch'))
+            dispatchErrorBlock(dispatch, 'fetch', error.message)
         })
 
     })
 
 export const addUser = createAsyncThunk(
     'users/addUser',
-    (payload: { name: string, email: string, username: string, address: { city: string }, callback: () => void }, { dispatch }) => {
-        dispatch(userSlice.actions.initiateLoading('add'))
+    (payload: UserActionPayloadTypes, { dispatch }) => {
+        dispatchLoadingBlock(dispatch, 'add')
         axios.post(`/`, { ...payload }).then(response => {
             dispatch(userSlice.actions.addUserSuccess(response.data))
-            dispatch(userSlice.actions.clearLoading('add'))
+            dispatch(userSlice.actions.toggleLoadingStatus({ type: 'add', status: 'idle' }))
             payload.callback()
         }).catch(error => {
-            console.log(error)
-            dispatch(userSlice.actions.clearLoading('add'))
+            dispatchErrorBlock(dispatch, 'add', error.message)
         })
     })
 
 export const editUser = createAsyncThunk(
     'users/editUser',
-    ({ name, email, username, address, id, callback }: { name: string, email: string, username: string, address: { city: string }, id: number, callback: () => void }, { dispatch }) => {
-        dispatch(userSlice.actions.initiateLoading('edit'))
+    ({ name, email, username, address, id, callback }: UserActionPayloadTypes, { dispatch }) => {
+        dispatchLoadingBlock(dispatch, 'edit')
         axios.put(`/${id}`, { name, email, username, address }).then(response => {
             dispatch(userSlice.actions.editUserSuccess(response.data))
-            dispatch(userSlice.actions.clearLoading('edit'))
+            dispatch(userSlice.actions.toggleLoadingStatus({ type: 'edit', status: 'idle' }))
             callback()
         }).catch(error => {
-            console.log(error)
-            dispatch(userSlice.actions.clearLoading('edit'))
+            dispatchErrorBlock(dispatch, 'edit', error.message)
         })
     })
 
 export const deleteUser = createAsyncThunk(
     'users/deleteUser',
     (payload: { id: number, callback: () => void }, { dispatch }) => {
-        dispatch(userSlice.actions.initiateLoading('delete'))
-        axios.delete(`/${payload.id}`).then(response => {
-            dispatch(userSlice.actions.deleteUserSuccess({ ...response.data, ...payload }))
-            dispatch(userSlice.actions.clearLoading('delete'))
+        dispatchLoadingBlock(dispatch, 'delete')
+        axios.delete(`/${payload.id}`).then(() => {
+            dispatch(userSlice.actions.deleteUserSuccess(payload.id))
+            dispatch(userSlice.actions.toggleLoadingStatus({ type: 'delete', status: 'idle' }))
             payload.callback()
         }).catch(error => {
-            console.log(error)
-            dispatch(userSlice.actions.clearLoading('delete'))
+            dispatchErrorBlock(dispatch, 'delete', error.message)
         })
     })
 
@@ -88,15 +77,12 @@ export const userSlice = createSlice({
     initialState,
     reducers: {
         fetchUsersSuccess: (state, { payload }: PayloadAction<User[]>) => {
-            console.log('successful', payload);
             state.usersList = payload
         },
         addUserSuccess: (state, { payload }: PayloadAction<User>) => {
-            console.log('successful', payload);
             state.usersList.push(payload)
         },
         editUserSuccess: (state, { payload }: PayloadAction<User>) => {
-            console.log('successful', payload)
             const findUser = state.usersList.find(user => user.id === payload.id)
             const { name, username, email, address } = payload
             if (findUser) {
@@ -106,21 +92,20 @@ export const userSlice = createSlice({
                 findUser.address = address
             }
         },
-        deleteUserSuccess: (state, { payload }: PayloadAction<User>) => {
-            console.log('successful', payload);
-            state.usersList = state.usersList.filter(user => user.id !== payload.id)
+        deleteUserSuccess: (state, { payload }: PayloadAction<number>) => {
+            state.usersList = state.usersList.filter(user => user.id !== payload)
         },
-        initiateLoading: (state, { payload }: PayloadAction<'fetch' | 'add' | 'edit' | 'delete'>) => {
-            if (payload === 'fetch') state['fetch'].status = 'loading'
-            else if (payload === 'add') state['add'].status = 'loading'
-            else if (payload === 'edit') state['edit'].status = 'loading'
-            else if (payload === 'delete') state['delete'].status = 'loading'
+        toggleLoadingStatus: (state, { payload }: PayloadAction<{ type: 'fetch' | 'add' | 'edit' | 'delete', status: 'loading' | 'idle' }>) => {
+            if (payload.type === 'fetch') state['fetch'].status = payload.status
+            else if (payload.type === 'add') state['add'].status = payload.status
+            else if (payload.type === 'edit') state['edit'].status = payload.status
+            else if (payload.type === 'delete') state['delete'].status = payload.status
         },
-        clearLoading: (state, { payload }: PayloadAction<'fetch' | 'add' | 'edit' | 'delete'>) => {
-            if (payload === 'fetch') state['fetch'].status = 'idle'
-            else if (payload === 'add') state['add'].status = 'idle'
-            else if (payload === 'edit') state['edit'].status = 'idle'
-            else if (payload === 'delete') state['delete'].status = 'idle'
+        toggleError: (state, { payload }: PayloadAction<{ type: 'fetch' | 'add' | 'edit' | 'delete', message: string | null }>) => {
+            if (payload.type === 'fetch') state['fetch'].error = payload.message
+            else if (payload.type === 'add') state['add'].error = payload.message
+            else if (payload.type === 'edit') state['edit'].error = payload.message
+            else if (payload.type === 'delete') state['delete'].error = payload.message
         },
     }
 })

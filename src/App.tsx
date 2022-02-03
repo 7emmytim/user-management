@@ -1,7 +1,7 @@
-import { lazy, Suspense, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { lazy, Suspense, useEffect } from 'react'
+import { useDispatch } from 'react-redux'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
-import { fetchUsers } from './features/userSlice';
+import { fetchUsers } from './features/userSlice'
 
 const HomePage = lazy(() => import('./pages/HomePage'))
 const FormPage = lazy(() => import('./pages/FormPage'))

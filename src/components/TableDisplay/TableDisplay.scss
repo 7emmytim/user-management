@@ -1,4 +1,11 @@
 #TableContainer {
+    .ant-table table {
+        text-align: center;
+    }
+
+    .ant-table-thead > tr > th {
+        text-align: center;
+    }
 
     .edit-user-btn {
         background-color: #ffc107;

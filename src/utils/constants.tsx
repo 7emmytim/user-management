@@ -1,7 +1,33 @@
-import { Button } from "antd"
-import { ColumnsType } from "antd/lib/table"
-import { Link } from "react-router-dom"
-import { User } from "../features/userSlice"
+import { Button } from 'antd'
+import { ColumnsType } from 'antd/lib/table'
+import { Link } from 'react-router-dom'
+
+export type User = {
+    id: string | number
+    name: string
+    username: string
+    email: string
+    address: {
+        city: string
+    }
+}
+
+export type UserState = {
+    usersList: User[]
+    fetch: { status: 'loading' | 'idle', error: string | null }
+    add: { status: 'loading' | 'idle', error: string | null }
+    edit: { status: 'loading' | 'idle', error: string | null }
+    delete: { status: 'loading' | 'idle', error: string | null }
+}
+
+export type UserActionPayloadTypes = {
+    name: string 
+    email: string
+    username: string
+    address: { city: string }
+    id: number
+    callback: () => void
+}
 
 export const formData = [
     { label: 'Name', rules: [{ required: true, message: 'Name is required' }] },
@@ -24,7 +50,7 @@ export const getColumns = (showModal: (data: { name: string, id: number }) => vo
         {
             key: 'id',
             title: 'Id',
-            dataIndex: 'id'
+            dataIndex: 'id',
         },
         {
             key: 'name',
@@ -34,7 +60,8 @@ export const getColumns = (showModal: (data: { name: string, id: number }) => vo
         {
             key: 'username',
             title: 'Username',
-            dataIndex: 'username'
+            dataIndex: 'username',
+            sorter: (a, b) => a.username.localeCompare(b.username)
         },
         {
             key: 'email',
